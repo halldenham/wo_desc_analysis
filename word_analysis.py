@@ -7,21 +7,15 @@ Created on Mon Oct  9 11:42:23 2017
 
 import pandas as pd
 import numpy as np
-from pandas import DataFrame, Series
 import re
 
-"""
+'''
 This script will reference a dictionary of regular expressions that are
 associated with particular "WO Types"
 
 The initial thought is to scan the WO description to see if it matches any
-of the RegEx in the dictionary, then list all distinct WO Type matches
-    If there's only 1 distinct match, then we're good
-    If there's multiple matches, review WO description manually
-    If there's no matches, look at popular words and wo descriptions among
-    those outlier examples
-        
-"""
+of the RegEx in the dictionary, then list all distinct WO Type matches     
+'''
 
 '''
 ############################################################################
@@ -88,6 +82,7 @@ def regex_phrase3(x):
         return x['code1'], x['code2'], x['code3']
 
 
+
 '''
 ############################################################################
 create a loop to run each series of regex phrases through the wo description
@@ -122,5 +117,25 @@ while ii < len(regex_df):
     wo_desc = pd.concat([wo_desc, df0], axis=1, join_axes=[wo_desc.index])
     ii = ii +1
 
+# drop the duplicate columns, and add the WO code columns to original data
 wo_codes = wo_desc.drop(['WO Description', 'WO_Num'], axis=1)
 wo_data = pd.concat([wo_data, wo_codes], axis=1, join_axes=[wo_data.index])
+
+# if there is a keyword associated with the WO, overwrite the code1
+# whether or not it's null or filled with the word "equipment"
+wo_data['code1'] = np.where(wo_data['Equip Keyword'].notnull(), 
+       'equipment', wo_data['code1'])
+
+# export full wo data
+wo_data.to_excel('wo_code_results.xlsx', index=False)
+
+# export wo data without any codes
+wo_data_no_code = wo_data.copy()
+# select data where "results" column has no value
+wo_data_no_code = wo_data_no_code[wo_data_no_code['code1'].isnull()]
+wo_data_no_code.to_excel('no_wo_code_results.xlsx', index=False)
+
+
+
+
+
